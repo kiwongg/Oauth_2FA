@@ -6,6 +6,8 @@ import com.example.oauth.security.OtpVerificationFilter;
 import com.example.oauth.service.DefaultUserService;
 import com.example.oauth.security.CustomAuthFailureHandler;
 import com.example.oauth.config.CustomSuccessHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,9 +19,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -30,6 +36,8 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 @EnableWebSecurity
 public class SpringSecurityConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(SpringSecurityConfig.class);
 
     private final DefaultUserService userDetailsService;
     private final OtpVerificationFilter otpVerificationFilter;
@@ -92,7 +100,7 @@ public class SpringSecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**"
                         ).permitAll()
-                        .requestMatchers("/dashboard").authenticated()  // Added here
+                        .requestMatchers("/dashboard").authenticated()
                         .requestMatchers("/api/pincode/**").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -115,15 +123,40 @@ public class SpringSecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
                         .successHandler(customSuccessHandler())
-                        .failureUrl("/login?oauth2Error=true")
+                        .failureHandler(oauth2FailureHandler())  // Custom failure handler
                         .authorizationEndpoint(auth -> auth
                                 .baseUri("/oauth2/authorization")
                                 .authorizationRequestRepository(authorizationRequestRepository())
+                        )
+                        .redirectionEndpoint(redirection -> redirection
+                                .baseUri("/login/oauth2/code/*")  // Explicit redirection endpoint
+                        )
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService())  // Custom user service
                         )
                 )
                 .addFilterAfter(otpVerificationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    // Add these new beans
+    @Bean
+    public OAuth2UserService<OAuth2UserRequest, OAuth2User> customOAuth2UserService() {
+        DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
+        return request -> {
+            OAuth2User user = delegate.loadUser(request);
+            // Add custom logic here if needed
+            return user;
+        };
+    }
+
+    @Bean
+    public AuthenticationFailureHandler oauth2FailureHandler() {
+        return (request, response, exception) -> {
+            logger.error("OAuth2 authentication failed", exception);
+            response.sendRedirect("/login?oauth2Error=true");
+        };
     }
 
     @Bean
