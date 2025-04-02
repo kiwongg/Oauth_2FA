@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+        .login-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            background: white;
+            margin-top: 5rem;
+        }
+
+        .social-login-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-google {
+            background: #4285F4;
+            color: white;
+        }
+
+        .btn-github {
+            background: #24292e;
+            color: white;
+        }
+
+        .btn-google:hover, .btn-github:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .social-icon {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container">
+  <div class="login-container">
+    <h2 class="text-center mb-4">Sign In</h2>
+
+    <!-- Error Message -->
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+      <span th:text="${error}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Success Message -->
+    <div th:if="${message}" class="alert alert-success alert-dismissible fade show">
+      <span th:text="${message}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <form th:action="@{/perform-login}" method="post" id="loginForm">
+      <div class="mb-3">
+        <label for="username" class="form-label">Email</label>
+        <input type="email" class="form-control" id="username" name="username" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control" id="password" name="password" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 mb-3">
+        <i class="fas fa-sign-in-alt me-2"></i> Login
+      </button>
+
+      <div class="text-center mb-3">
+        <span class="text-muted">Don't have an account? </span>
+        <a th:href="@{/registration}" class="text-decoration-none">Sign up</a>
+      </div>
+
+      <div class="d-flex flex-column">
+        <a th:href="@{/oauth2/authorization/google}" class="social-login-btn btn-google">
+          <i class="fab fa-google social-icon"></i>
+          Continue with Google
+        </a>
+        <a th:href="@{/oauth2/authorization/github}" class="social-login-btn btn-github">
+          <i class="fab fa-github social-icon"></i>
+          Continue with GitHub
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+</script>
+</body>
+</html>
